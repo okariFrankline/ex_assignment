@@ -12,7 +12,11 @@ defmodule ExAssignment.Core.Todos.Cache do
   """
   @spec new() :: :recommended_task
   def new do
-    :ets.new(@cache, [:set, :public, :named_table])
+    :ets.new(@cache, [
+      :set,
+      :public,
+      :named_table
+    ])
   end
 
   @doc """
