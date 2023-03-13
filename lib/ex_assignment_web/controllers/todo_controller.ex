@@ -45,16 +45,14 @@ defmodule ExAssignmentWeb.TodoController do
   end
 
   def update(conn, %{"id" => id, "todo" => todo_params}) do
-    todo = Todos.get_todo!(id)
-
-    case Todos.update_todo(todo, todo_params) do
+    case Todos.update_todo(id, todo_params) do
       {:ok, todo} ->
         conn
         |> put_flash(:info, "Todo updated successfully.")
         |> redirect(to: ~p"/todos/#{todo}")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :edit, todo: todo, changeset: changeset)
+        render(conn, :edit, changeset: changeset)
     end
   end
 
@@ -68,16 +66,16 @@ defmodule ExAssignmentWeb.TodoController do
   end
 
   def check(conn, %{"id" => id}) do
-    :ok = Todos.check(id)
-
-    conn
-    |> redirect(to: ~p"/todos")
+    with {:ok, _} <- Todos.check(id) do
+      conn
+      |> redirect(to: ~p"/todos")
+    end
   end
 
   def uncheck(conn, %{"id" => id}) do
-    :ok = Todos.uncheck(id)
-
-    conn
-    |> redirect(to: ~p"/todos")
+    with {:ok, _} <- Todos.uncheck(id) do
+      conn
+      |> redirect(to: ~p"/todos")
+    end
   end
 end
