@@ -106,15 +106,14 @@ defmodule ExAssignment.Todos do
   ## Examples
 
       iex> delete_todo(todo)
-      {:ok, %Todo{}}
+      :ok
 
       iex> delete_todo(todo)
-      {:error, %Ecto.Changeset{}}
+      :ok
 
   """
-  def delete_todo(%Todo{} = todo) do
-    Repo.delete(todo)
-  end
+  @spec delete_todo(todo_id :: pos_integer()) :: :ok
+  defdelegate delete_todo(todo_id), to: Core.Todos.Delete, as: :execute
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking todo changes.
@@ -138,15 +137,6 @@ defmodule ExAssignment.Todos do
       :ok
 
   """
-
-  # def check(id) do
-  #   {_, _} =
-  #     from(t in Todo, where: t.id == ^id, update: [set: [done: true]])
-  #     |> Repo.update_all([])
-
-  #   :ok
-  # end
-
   @spec check(todo_id :: pos_integer(), action :: :done) ::
           {:ok, Todo.t()} | {:error, Ecto.Changeset.t()} | {:error, :task_not_found}
   defdelegate check(todo_id, action \\ :done), to: Core.Todos.Check, as: :execute
@@ -160,15 +150,6 @@ defmodule ExAssignment.Todos do
       :ok
 
   """
-
-  # def uncheck(id) do
-  #   {_, _} =
-  #     from(t in Todo, where: t.id == ^id, update: [set: [done: false]])
-  #     |> Repo.update_all([])
-
-  #   :ok
-  # end
-
   @spec uncheck(todo_id :: pos_integer(), action :: :undone) ::
           {:ok, Todo.t()} | {:error, Ecto.Changeset.t()} | {:error, :task_not_found}
   defdelegate uncheck(todo_id, action \\ :undone), to: Core.Todos.Check, as: :execute

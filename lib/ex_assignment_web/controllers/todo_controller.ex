@@ -57,12 +57,11 @@ defmodule ExAssignmentWeb.TodoController do
   end
 
   def delete(conn, %{"id" => id}) do
-    todo = Todos.get_todo!(id)
-    {:ok, _todo} = Todos.delete_todo(todo)
-
-    conn
-    |> put_flash(:info, "Todo deleted successfully.")
-    |> redirect(to: ~p"/todos")
+    with :ok <- Todos.delete_todo(id) do
+      conn
+      |> put_flash(:info, "Todo deleted successfully.")
+      |> redirect(to: ~p"/todos")
+    end
   end
 
   def check(conn, %{"id" => id}) do
