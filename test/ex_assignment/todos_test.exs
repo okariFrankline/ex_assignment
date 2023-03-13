@@ -28,6 +28,10 @@ defmodule ExAssignment.TodosTest do
   end
 
   describe "create todo" do
+    setup [
+      :reset_cache
+    ]
+
     test "successfully creates a new todo and inserts it into the recommendation cache if the cache is empty" do
       params = string_params_for(:todo, done: false)
 
@@ -68,6 +72,10 @@ defmodule ExAssignment.TodosTest do
   end
 
   describe "check todo" do
+    setup [
+      :reset_cache
+    ]
+
     test "successfully marks a todo as checked" do
       {:ok, %Todo{id: id}} =
         :todo
@@ -108,6 +116,10 @@ defmodule ExAssignment.TodosTest do
   end
 
   describe "uncheck todo" do
+    setup [
+      :reset_cache
+    ]
+
     test "successfully marks a todo as unchecked" do
       {:ok, %Todo{id: id}} =
         :todo
@@ -161,5 +173,11 @@ defmodule ExAssignment.TodosTest do
       end
 
     {:ok, done_todos: todos}
+  end
+
+  defp reset_cache(_) do
+    Cache.reset_cache()
+
+    :ok
   end
 end
