@@ -1,63 +1,165 @@
 defmodule ExAssignment.TodosTest do
-  use ExAssignment.DataCase
+  use ExAssignment.DataCase, async: false
 
   alias ExAssignment.Todos
+  alias ExAssignment.Todos.Todo
+  alias ExAssignment.Core.Todos.Cache
 
-  describe "todos" do
-    alias ExAssignment.Todos.Todo
+  describe "list todos" do
+    setup [
+      :create_open_todos,
+      :create_closed_todos
+    ]
 
-    import ExAssignment.TodosFixtures
-
-    @invalid_attrs %{done: nil, priority: nil, title: nil}
-
-    test "list_todos/0 returns all todos" do
-      todo = todo_fixture()
-      assert Todos.list_todos() == [todo]
+    test "returns a list of open todos" do
+      todos = Todos.list_todos(:open)
+      assert Enum.all?(todos, &(&1.done == false))
     end
 
-    test "get_todo!/1 returns the todo with given id" do
-      todo = todo_fixture()
-      assert Todos.get_todo!(todo.id) == todo
+    test "returns a list of closed todos" do
+      todos = Todos.list_todos(:done)
+      assert Enum.all?(todos, &(&1.done == true))
     end
 
-    test "create_todo/1 with valid data creates a todo" do
-      valid_attrs = %{done: true, priority: 42, title: "some title"}
+    test "returns a list of all the todos irregardless of their status" do
+      todos = Todos.list_todos()
+      assert Enum.all?(todos, &(&1.done in [true, false]))
+    end
+  end
 
-      assert {:ok, %Todo{} = todo} = Todos.create_todo(valid_attrs)
-      assert todo.done == true
-      assert todo.priority == 42
-      assert todo.title == "some title"
+  describe "create todo" do
+    test "successfully creates a new todo and inserts it into the recommendation cache if the cache is empty" do
+      params = string_params_for(:todo, done: false)
+
+      assert {:ok, %Todo{id: id}} = Todos.create_todo(params)
+      assert %Todo{id: ^id} = Cache.get_recommended()
     end
 
-    test "create_todo/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Todos.create_todo(@invalid_attrs)
+    test "successfully creates a new todo but does not insert it into the recommendation cache, if the priority of the new todo is lower" do
+      {:ok, %Todo{id: cached_todo_id}} =
+        :todo
+        |> string_params_for(done: false, priority: 2)
+        |> Todos.create_todo()
+
+      {:ok, %Todo{id: new_todo_id}} =
+        :todo
+        |> string_params_for(done: false, priority: 4)
+        |> Todos.create_todo()
+
+      %Todo{id: new_cached_id} = Cache.get_recommended()
+
+      assert cached_todo_id != new_todo_id && new_cached_id == cached_todo_id
     end
 
-    test "update_todo/2 with valid data updates the todo" do
-      todo = todo_fixture()
-      update_attrs = %{done: false, priority: 43, title: "some updated title"}
+    test "successfully creates a new todo and updates the recommendation cache if the priority of the new todo id higher than cached" do
+      :todo
+      |> string_params_for(done: false, priority: 10)
+      |> Todos.create_todo()
 
-      assert {:ok, %Todo{} = todo} = Todos.update_todo(todo, update_attrs)
-      assert todo.done == false
-      assert todo.priority == 43
-      assert todo.title == "some updated title"
+      {:ok, %Todo{id: new_todo_id}} =
+        :todo
+        |> string_params_for(done: false, priority: 4)
+        |> Todos.create_todo()
+
+      %Todo{id: new_cached_id} = Cache.get_recommended()
+
+      assert new_cached_id == new_todo_id
+    end
+  end
+
+  describe "check todo" do
+    test "successfully marks a todo as checked" do
+      {:ok, %Todo{id: id}} =
+        :todo
+        |> string_params_for(done: false)
+        |> Todos.create_todo()
+
+      assert {:ok, %Todo{id: ^id, done: true}} = Todos.check(id)
     end
 
-    test "update_todo/2 with invalid data returns error changeset" do
-      todo = todo_fixture()
-      assert {:error, %Ecto.Changeset{}} = Todos.update_todo(todo, @invalid_attrs)
-      assert todo == Todos.get_todo!(todo.id)
+    test "successfully marks a todo as done, and if it is the current recommended task, it updates the recommendation cache with a new task" do
+      {:ok, %Todo{id: id}} =
+        :todo
+        |> string_params_for(done: false)
+        |> Todos.create_todo()
+
+      current_cached_todo = Cache.get_recommended()
+      insert(:todo, done: false, priority: 10)
+
+      {:ok, _} = Todos.check(id)
+      new_cached_todo = Cache.get_recommended()
+
+      refute current_cached_todo.id == new_cached_todo.id
     end
 
-    test "delete_todo/1 deletes the todo" do
-      todo = todo_fixture()
-      assert {:ok, %Todo{}} = Todos.delete_todo(todo)
-      assert_raise Ecto.NoResultsError, fn -> Todos.get_todo!(todo.id) end
+    test "successfully marks a todo as done, and if it's not the current recommended task, it does not update the recommendation cache" do
+      :todo
+      |> string_params_for(done: false)
+      |> Todos.create_todo()
+
+      current_cached_todo = Cache.get_recommended()
+      to_update_todo = insert(:todo, done: false, priority: 10)
+
+      {:ok, _} = Todos.check(to_update_todo.id)
+      new_cached_todo = Cache.get_recommended()
+
+      assert current_cached_todo.id == new_cached_todo.id
+    end
+  end
+
+  describe "uncheck todo" do
+    test "successfully marks a todo as unchecked" do
+      {:ok, %Todo{id: id}} =
+        :todo
+        |> string_params_for(done: true)
+        |> Todos.create_todo()
+
+      assert {:ok, %Todo{id: ^id, done: false}} = Todos.uncheck(id)
     end
 
-    test "change_todo/1 returns a todo changeset" do
-      todo = todo_fixture()
-      assert %Ecto.Changeset{} = Todos.change_todo(todo)
+    test "successfully marks a todo as not done, if it has the a higher priority than the current recommended task, it updates the recommendation cache with a newly undone task" do
+      :todo
+      |> string_params_for(done: false, priority: 10)
+      |> Todos.create_todo()
+
+      to_uncheck_todo = insert(:todo, done: true, priority: 5)
+
+      {:ok, _} = Todos.uncheck(to_uncheck_todo.id)
+      new_cached_todo = Cache.get_recommended()
+
+      assert new_cached_todo.id == to_uncheck_todo.id
     end
+
+    test "successfully marks a todo as not done, if it does not have a higher priority than the current recommended task, it does not update the recommendation cache" do
+      :todo
+      |> string_params_for(done: false, priority: 2)
+      |> Todos.create_todo()
+
+      old_cached_todo = Cache.get_recommended()
+      to_update_todo = insert(:todo, done: true, priority: 10)
+
+      {:ok, _} = Todos.check(to_update_todo.id)
+      new_cached_todo = Cache.get_recommended()
+
+      assert old_cached_todo.id == new_cached_todo.id && to_update_todo.id != new_cached_todo.id
+    end
+  end
+
+  defp create_open_todos(_) do
+    todos =
+      for _ <- 1..3 do
+        insert(:todo, done: false)
+      end
+
+    {:ok, open_todos: todos}
+  end
+
+  defp create_closed_todos(_) do
+    todos =
+      for _ <- 1..3 do
+        insert(:todo, done: true)
+      end
+
+    {:ok, done_todos: todos}
   end
 end
