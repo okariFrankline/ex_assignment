@@ -35,12 +35,26 @@ defmodule ExAssignment.Queries.Todos do
   ### Examples
   iex> not_completed()
   %Ecto.Query{}
-
   """
   @spec not_completed() :: Ecto.Query.t()
   @spec not_completed(query :: Ecto.Queryable.t()) :: Ecto.Query.t()
   def not_completed(query \\ new()) do
     query
     |> where([t], t.done == false)
+  end
+
+  @doc """
+  Returns a list of todos which have a priority higher than the provided
+  priority
+
+  ## Examples
+  iex> priority_higher_than(priority)
+  %Ecto.Query{}
+  """
+  @spec priority_higher_than(query :: Ecto.Queryable.t(), priority :: pos_integer()) ::
+          Ecto.Queryable.t()
+  def priority_higher_than(query \\ new(), priority) do
+    query
+    |> where([t], t.priority >= ^priority)
   end
 end

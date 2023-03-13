@@ -16,8 +16,35 @@ defmodule ExAssignment.Todos.Todo do
     timestamps()
   end
 
-  @doc false
-  def changeset(todo, attrs) do
+  @doc """
+  Returns a changeset for creating new todos
+
+  ## Examples
+
+  iex> creation_changeset(todo, attrs)
+  %Ecto.Changeset{}
+
+  """
+  @spec changeset(todo :: t | changeset, attrs :: map) :: changeset
+        when changeset: Ecto.Changeset.t()
+  def changeset(todo \\ %__MODULE__{}, attrs) do
+    todo
+    |> cast(attrs, [:title, :priority, :done])
+    |> validate_required([:title, :priority, :done])
+  end
+
+  @doc """
+  Returns a changeset for creating new todos
+
+  ## Examples
+
+  iex> creation_changeset(todo, attrs)
+  %Ecto.Changeset{}
+
+  """
+  @spec creation_changeset(todo :: t | changeset, attrs :: map) :: changeset
+        when changeset: Ecto.Changeset.t()
+  def creation_changeset(todo \\ %__MODULE__{}, attrs) do
     todo
     |> cast(attrs, [:title, :priority, :done])
     |> validate_required([:title, :priority, :done])

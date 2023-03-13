@@ -27,6 +27,7 @@ defmodule ExAssignmentWeb.ConnCase do
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
+      import ExAssignment.Factory
       import ExAssignmentWeb.ConnCase
     end
   end

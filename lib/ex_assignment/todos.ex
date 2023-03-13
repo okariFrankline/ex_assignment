@@ -5,6 +5,7 @@ defmodule ExAssignment.Todos do
 
   import Ecto.Query, warn: false
 
+  alias ExAssignment.Core
   alias ExAssignment.Repo
   alias ExAssignment.Todos.Todo
   alias ExAssignment.Queries.Todos
@@ -49,13 +50,16 @@ defmodule ExAssignment.Todos do
 
   ASSIGNMENT: ...
   """
-  def get_recommended() do
-    list_todos(:open)
-    |> case do
-      [] -> nil
-      todos -> Enum.take_random(todos, 1) |> List.first()
-    end
-  end
+
+  # def get_recommended() do
+  #   list_todos(:open)
+  #   |> case do
+  #     [] -> nil
+  #     todos -> Enum.take_random(todos, 1) |> List.first()
+  #   end
+  # end
+
+  defdelegate get_recommended, to: Core.Todos.Recommended, as: :fetch
 
   @doc """
   Gets a single todo.
@@ -85,11 +89,8 @@ defmodule ExAssignment.Todos do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_todo(attrs \\ %{}) do
-    %Todo{}
-    |> Todo.changeset(attrs)
-    |> Repo.insert()
-  end
+  @spec create_todo(attrs :: map()) :: {:ok, Todo.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate create_todo(attrs), to: Core.Todos.Create, as: :execute
 
   @doc """
   Updates a todo.

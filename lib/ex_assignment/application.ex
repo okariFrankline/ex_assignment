@@ -5,8 +5,13 @@ defmodule ExAssignment.Application do
 
   use Application
 
+  alias ExAssignment.Core.Todos.Cache
+
   @impl true
   def start(_type, _args) do
+    # start the recommended cache
+    Cache.new()
+
     children = [
       # Start the Telemetry supervisor
       ExAssignmentWeb.Telemetry,
