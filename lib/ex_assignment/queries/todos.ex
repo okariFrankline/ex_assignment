@@ -3,7 +3,7 @@ defmodule ExAssignment.Queries.Todos do
   Defines queries for working with Todos
   """
 
-  import Ecto.Query, only: [where: 3, order_by: 3]
+  import Ecto.Query, only: [where: 3, order_by: 3, limit: 2]
 
   alias ExAssignment.Todos.Todo
 
@@ -56,5 +56,15 @@ defmodule ExAssignment.Queries.Todos do
   def priority_higher_than(query \\ new(), priority) do
     query
     |> where([t], t.priority >= ^priority)
+  end
+
+  @doc """
+  Returns a query representing a todo identified by a given id
+  """
+  @spec with_id(query :: Ecto.Queryable.t(), todo_id :: pos_integer()) :: Ecto.Queryable.t()
+  def with_id(query \\ new(), todo_id) do
+    query
+    |> where([t], t.id == ^todo_id)
+    |> limit(1)
   end
 end
