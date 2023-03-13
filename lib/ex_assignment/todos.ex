@@ -50,15 +50,6 @@ defmodule ExAssignment.Todos do
 
   ASSIGNMENT: ...
   """
-
-  # def get_recommended() do
-  #   list_todos(:open)
-  #   |> case do
-  #     [] -> nil
-  #     todos -> Enum.take_random(todos, 1) |> List.first()
-  #   end
-  # end
-
   defdelegate get_recommended, to: Core.Todos.Recommended, as: :fetch
 
   @doc """
@@ -104,11 +95,10 @@ defmodule ExAssignment.Todos do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_todo(%Todo{} = todo, attrs) do
-    todo
-    |> Todo.changeset(attrs)
-    |> Repo.update()
-  end
+
+  @spec update_todo(todo_id :: pos_integer(), params :: map()) ::
+          {:ok, Todo.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate update_todo(todo_id, params), to: Core.Todos.Update, as: :execute
 
   @doc """
   Deletes a todo.
@@ -148,13 +138,18 @@ defmodule ExAssignment.Todos do
       :ok
 
   """
-  def check(id) do
-    {_, _} =
-      from(t in Todo, where: t.id == ^id, update: [set: [done: true]])
-      |> Repo.update_all([])
 
-    :ok
-  end
+  # def check(id) do
+  #   {_, _} =
+  #     from(t in Todo, where: t.id == ^id, update: [set: [done: true]])
+  #     |> Repo.update_all([])
+
+  #   :ok
+  # end
+
+  @spec check(todo_id :: pos_integer(), action :: :done) ::
+          {:ok, Todo.t()} | {:error, Ecto.Changeset.t()} | {:error, :task_not_found}
+  defdelegate check(todo_id, action \\ :done), to: Core.Todos.Check, as: :execute
 
   @doc """
   Marks the todo referenced by the given id as unchecked (not done).
@@ -165,11 +160,16 @@ defmodule ExAssignment.Todos do
       :ok
 
   """
-  def uncheck(id) do
-    {_, _} =
-      from(t in Todo, where: t.id == ^id, update: [set: [done: false]])
-      |> Repo.update_all([])
 
-    :ok
-  end
+  # def uncheck(id) do
+  #   {_, _} =
+  #     from(t in Todo, where: t.id == ^id, update: [set: [done: false]])
+  #     |> Repo.update_all([])
+
+  #   :ok
+  # end
+
+  @spec uncheck(todo_id :: pos_integer(), action :: :undone) ::
+          {:ok, Todo.t()} | {:error, Ecto.Changeset.t()} | {:error, :task_not_found}
+  defdelegate uncheck(todo_id, action \\ :undone), to: Core.Todos.Check, as: :execute
 end

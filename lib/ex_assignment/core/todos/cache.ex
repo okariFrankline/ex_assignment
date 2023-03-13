@@ -16,6 +16,12 @@ defmodule ExAssignment.Core.Todos.Cache do
   end
 
   @doc """
+  Reset the cache by deleting all entries within the table
+  """
+  @spec reset_cache() :: true
+  def reset_cache, do: :ets.delete_all_objects(@cache)
+
+  @doc """
   Inserts or updates the recommended task in the cache
 
   ## Examples
